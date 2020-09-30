@@ -10,14 +10,14 @@ namespace GameStore.WebUI.Infrastructure.Binders
         public object BindModel(ControllerContext controllerContext,
             ModelBindingContext bindingContext)
         {
-            // Получить объект Cart из сеанса
+            // Get Cart object from session
             Cart cart = null;
             if (controllerContext.HttpContext.Session != null)
             {
                 cart = (Cart)controllerContext.HttpContext.Session[sessionKey];
             }
 
-            // Создать объект Cart если он не обнаружен в сеансе
+            // Create Cart object if not found in session
             if (cart == null)
             {
                 cart = new Cart();
@@ -27,7 +27,6 @@ namespace GameStore.WebUI.Infrastructure.Binders
                 }
             }
 
-            // Возвратить объект Cart
             return cart;
         }
     }
