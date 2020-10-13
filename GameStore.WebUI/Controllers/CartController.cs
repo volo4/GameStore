@@ -22,6 +22,10 @@ namespace GameStore.WebUI.Controllers
                 ReturnUrl = returnUrl
             });
         }
+        public ViewResult Checkout(Cart cart, ShippingDetails shippingDetails)
+        {
+            return View(new ShippingDetails());
+        }
 
         public RedirectToRouteResult AddToCart(Cart cart, int gameId, string returnUrl)
         {

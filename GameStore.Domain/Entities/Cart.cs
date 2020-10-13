@@ -10,8 +10,7 @@ namespace GameStore.Domain.Entities
         public void AddItem(Game game, int quantity)
         {
             CartLine line = lineCollection
-                .Where(g => g.Game.GameId == game.GameId)
-                .FirstOrDefault();
+                .FirstOrDefault(g => g.Game.GameId == game.GameId);
 
             if (line == null)
             {
