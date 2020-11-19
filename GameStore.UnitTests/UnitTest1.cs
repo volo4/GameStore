@@ -308,58 +308,72 @@ namespace GameStore.UnitTests
         /// Checking the addition to the cart
         /// </summary>
         [TestMethod]
-        public void Can_Add_To_Cart()
+        public void Cannot_Checkout_Empty_Cart()
         {
-            Mock<IGameRepository> mock = new Mock<IGameRepository>();
-            mock.Setup(m => m.Games).Returns(new List<Game> {
-        new Game {GameId = 1, Name = "Game1", Category = "Кат1"},
-    }.AsQueryable());
+            // Organization - Create a Simulated Order Processor
+            Mock<IOrderProcessor> mock = new Mock<IOrderProcessor>();
 
             Cart cart = new Cart();
 
-            CartController controller = new CartController(mock.Object);
+            
+            ShippingDetails shippingDetails = new ShippingDetails();
 
-            controller.AddToCart(cart, 1, null);
+            CartController controller = new CartController(null, mock.Object);
 
-            Assert.AreEqual(cart.Lines.Count(), 1);
-            Assert.AreEqual(cart.Lines.ToList()[0].Game.GameId, 1);
+            // Act
+            ViewResult result = controller.Checkout(cart, shippingDetails);
+
+            // Assertion - checking that the order has not been submitted to the processor 
+            mock.Verify(m => m.ProcessOrder(It.IsAny<Cart>(), It.IsAny<ShippingDetails>()),
+                Times.Never());
+
+            // Assertion - checking that a method returned a standard view 
+            Assert.AreEqual("", result.ViewName);
+
+            // Assertion - checking that the wrong model was passed to the view
+            Assert.AreEqual(false, result.ViewData.ModelState.IsValid);
         }
-
-        /// <summary>
-        /// After adding the game to the cart, there should be a redirect to the cart page
-        /// </summary>
         [TestMethod]
-        public void Adding_Game_To_Cart_Goes_To_Cart_Screen()
+        public void Cannot_Checkout_Invalid_ShippingDetails()
         {
-            Mock<IGameRepository> mock = new Mock<IGameRepository>();
-            mock.Setup(m => m.Games).Returns(new List<Game> {
-        new Game {GameId = 1, Name = "Game1", Category = "Кат1"},
-    }.AsQueryable());
+            Mock<IOrderProcessor> mock = new Mock<IOrderProcessor>();
 
             Cart cart = new Cart();
+            cart.AddItem(new Game(), 1);
 
-            CartController controller = new CartController(mock.Object);
+            CartController controller = new CartController(null, mock.Object);
 
-            RedirectToRouteResult result = controller.AddToCart(cart, 2, "myUrl");
+            controller.ModelState.AddModelError("error", "error");
 
-            Assert.AreEqual(result.RouteValues["action"], "Index");
-            Assert.AreEqual(result.RouteValues["returnUrl"], "myUrl");
+            ViewResult result = controller.Checkout(cart, new ShippingDetails());
+
+            mock.Verify(m => m.ProcessOrder(It.IsAny<Cart>(), It.IsAny<ShippingDetails>()),
+                Times.Never());
+
+            Assert.AreEqual("", result.ViewName);
+
+            Assert.AreEqual(false, result.ViewData.ModelState.IsValid);
         }
-
-        // Checking the URL
         [TestMethod]
-        public void Can_View_Cart_Contents()
+        public void Can_Checkout_And_Submit_Order()
         {
+            Mock<IOrderProcessor> mock = new Mock<IOrderProcessor>();
+
             Cart cart = new Cart();
+            cart.AddItem(new Game(), 1);
 
-            CartController target = new CartController(null);
+            CartController controller = new CartController(null, mock.Object);
 
-            // Action - Calling the Index () action method
-            CartIndexViewModel result
-                = (CartIndexViewModel)target.Index(cart, "myUrl").ViewData.Model;
+            ViewResult result = controller.Checkout(cart, new ShippingDetails());
 
-            Assert.AreSame(result.Cart, cart);
-            Assert.AreEqual(result.ReturnUrl, "myUrl");
+            mock.Verify(m => m.ProcessOrder(It.IsAny<Cart>(), It.IsAny<ShippingDetails>()),
+                Times.Once());
+
+            Assert.AreEqual("Completed", result.ViewName);
+
+            Assert.AreEqual(true, result.ViewData.ModelState.IsValid);
         }
+
+
     }
 }
