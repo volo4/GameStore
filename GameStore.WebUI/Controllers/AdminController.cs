@@ -1,10 +1,12 @@
 ﻿using System.Linq;
+using System.Web;
 using System.Web.Mvc;
 using GameStore.Domain.Abstract;
 using GameStore.Domain.Entities;
 
 namespace GameStore.WebUI.Controllers
 {
+    [Authorize]
     public class AdminController : Controller
     {
         IGameRepository repository;
@@ -18,6 +20,10 @@ namespace GameStore.WebUI.Controllers
         {
             return View(repository.Games);
         }
+        public ViewResult Create()
+        {
+            return View("Edit", new Game());
+        }
         public ViewResult Edit(int gameId)
         {
             Game game = repository.Games
@@ -25,21 +31,38 @@ namespace GameStore.WebUI.Controllers
             return View(game);
         }
 
-        // Перегруженная версия Edit() для сохранения изменений
+        // Overloaded version of Edit () to save changes
         [HttpPost]
-        public ActionResult Edit(Game game)
+        public ActionResult Edit(Game game, HttpPostedFileBase image = null)
         {
             if (ModelState.IsValid)
             {
+                if (image != null)
+                {
+                    game.ImageMimeType = image.ContentType;
+                    game.ImageData = new byte[image.ContentLength];
+                    image.InputStream.Read(game.ImageData, 0, image.ContentLength);
+                }
                 repository.SaveGame(game);
-                TempData["message"] = string.Format("Изменения в игре \"{0}\" были сохранены", game.Name);
+                TempData["message"] = string.Format("Game changes \"{0}\" have been saved", game.Name);
                 return RedirectToAction("Index");
             }
             else
             {
-                // Что-то не так со значениями данных
+                // if smth is wrong
                 return View(game);
             }
+        }
+        [HttpPost]
+        public ActionResult Delete(int gameId)
+        {
+            Game deletedGame = repository.DeleteGame(gameId);
+            if (deletedGame != null)
+            {
+                TempData["message"] = string.Format("Game \"{0}\" has been removed",
+                    deletedGame.Name);
+            }
+            return RedirectToAction("Index");
         }
     }
 }

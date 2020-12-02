@@ -40,26 +40,22 @@ namespace GameStore.UnitTests
         [TestMethod]
         public void Can_Edit_Game()
         {
-            // Организация - создание имитированного хранилища данных
             Mock<IGameRepository> mock = new Mock<IGameRepository>();
             mock.Setup(m => m.Games).Returns(new List<Game>
             {
-                new Game { GameId = 1, Name = "Игра1"},
-                new Game { GameId = 2, Name = "Игра2"},
-                new Game { GameId = 3, Name = "Игра3"},
-                new Game { GameId = 4, Name = "Игра4"},
-                new Game { GameId = 5, Name = "Игра5"}
+                new Game { GameId = 1, Name = "Game1"},
+                new Game { GameId = 2, Name = "Game2"},
+                new Game { GameId = 3, Name = "Game3"},
+                new Game { GameId = 4, Name = "Game4"},
+                new Game { GameId = 5, Name = "Game5"}
             });
 
-            // Организация - создание контроллера
             AdminController controller = new AdminController(mock.Object);
 
-            // Действие
             Game game1 = controller.Edit(1).ViewData.Model as Game;
             Game game2 = controller.Edit(2).ViewData.Model as Game;
             Game game3 = controller.Edit(3).ViewData.Model as Game;
 
-            // Assert
             Assert.AreEqual(1, game1.GameId);
             Assert.AreEqual(2, game2.GameId);
             Assert.AreEqual(3, game3.GameId);
@@ -68,70 +64,74 @@ namespace GameStore.UnitTests
         [TestMethod]
         public void Cannot_Edit_Nonexistent_Game()
         {
-            // Организация - создание имитированного хранилища данных
             Mock<IGameRepository> mock = new Mock<IGameRepository>();
             mock.Setup(m => m.Games).Returns(new List<Game>
             {
-                new Game { GameId = 1, Name = "Игра1"},
-                new Game { GameId = 2, Name = "Игра2"},
-                new Game { GameId = 3, Name = "Игра3"},
-                new Game { GameId = 4, Name = "Игра4"},
-                new Game { GameId = 5, Name = "Игра5"}
+                new Game { GameId = 1, Name = "Game1"},
+                new Game { GameId = 2, Name = "Game2"},
+                new Game { GameId = 3, Name = "Game3"},
+                new Game { GameId = 4, Name = "Game4"},
+                new Game { GameId = 5, Name = "Game5"}
             });
 
-            // Организация - создание контроллера
             AdminController controller = new AdminController(mock.Object);
 
-            // Действие
             Game result = controller.Edit(6).ViewData.Model as Game;
 
-            // Assert
         }
         [TestMethod]
         public void Can_Save_Valid_Changes()
         {
-            // Организация - создание имитированного хранилища данных
             Mock<IGameRepository> mock = new Mock<IGameRepository>();
 
-            // Организация - создание контроллера
             AdminController controller = new AdminController(mock.Object);
 
-            // Организация - создание объекта Game
             Game game = new Game { Name = "Test" };
 
-            // Действие - попытка сохранения товара
             ActionResult result = controller.Edit(game);
 
-            // Утверждение - проверка того, что к хранилищу производится обращение
             mock.Verify(m => m.SaveGame(game));
 
-            // Утверждение - проверка типа результата метода
             Assert.IsNotInstanceOfType(result, typeof(ViewResult));
         }
 
         [TestMethod]
         public void Cannot_Save_Invalid_Changes()
         {
-            // Организация - создание имитированного хранилища данных
             Mock<IGameRepository> mock = new Mock<IGameRepository>();
 
-            // Организация - создание контроллера
             AdminController controller = new AdminController(mock.Object);
 
-            // Организация - создание объекта Game
             Game game = new Game { Name = "Test" };
 
-            // Организация - добавление ошибки в состояние модели
             controller.ModelState.AddModelError("error", "error");
 
-            // Действие - попытка сохранения товара
             ActionResult result = controller.Edit(game);
 
-            // Утверждение - проверка того, что обращение к хранилищу НЕ производится 
             mock.Verify(m => m.SaveGame(It.IsAny<Game>()), Times.Never());
 
-            // Утверждение - проверка типа результата метода
             Assert.IsInstanceOfType(result, typeof(ViewResult));
+        }
+        [TestMethod]
+        public void Can_Delete_Valid_Games()
+        {
+            Game game = new Game { GameId = 2, Name = "Game2" };
+
+            Mock<IGameRepository> mock = new Mock<IGameRepository>();
+            mock.Setup(m => m.Games).Returns(new List<Game>
+            {
+                new Game { GameId = 1, Name = "Game1"},
+                new Game { GameId = 2, Name = "Game2"},
+                new Game { GameId = 3, Name = "Game3"},
+                new Game { GameId = 4, Name = "Game4"},
+                new Game { GameId = 5, Name = "Game5"}
+            });
+
+            AdminController controller = new AdminController(mock.Object);
+
+            controller.Delete(game.GameId);
+
+            mock.Verify(m => m.DeleteGame(game.GameId));
         }
     }
 
